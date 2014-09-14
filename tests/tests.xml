@@ -28,7 +28,8 @@ Date       Tests        Version Notes
 2011-05-23 #32		3.02	Changed domain to c dash dash n.com because
 				g dash dash a.com no longer has an MX record.
 2011-07-14 All		3.04	Changed my link to http://isemail.info
-2013-11-29 #71		3.05	Changed ISEMAIL_RFC5321 to ISEMAIL_DEPREC 
+2013-11-29 #71		3.05	Changed ISEMAIL_RFC5321 to ISEMAIL_DEPREC
+2013-11-29 #71		3.05	Changed ISEMAIL_RFC5321 to ISEMAIL_DEPREC
 -->
 <tests version="3.05">
 	<description>
@@ -739,8 +740,8 @@ Date       Tests        Version Notes
 	<test id="100">
 		<address>test@xn--hxajbheg2az3al.xn--jxalpdlp</address>
 		<comment>A valid IDN from ICANN's <a href="http://idn.icann.org/#The_example.test_names">IDN TLD evaluation gateway</a></comment>
-		<category>ISEMAIL_VALID_CATEGORY</category>
-		<diagnosis>ISEMAIL_VALID</diagnosis>
+		<category>ISEMAIL_DNSWARN</category>
+		<diagnosis>ISEMAIL_DNSWARN_NO_RECORD</diagnosis>
 		<source>Michael Rushton</source>
 		<sourcelink>http://squiloople.com/tag/email/</sourcelink>
 	</test>
@@ -1209,9 +1210,9 @@ Date       Tests        Version Notes
 	</test>
 	<test id="167">
 		<address>test@test.com</address>
-		<comment>test.com has an A-record but not an MX-record</comment>
-		<category>ISEMAIL_DNSWARN</category>
-		<diagnosis>ISEMAIL_DNSWARN_NO_MX_RECORD</diagnosis>
+		<comment>test.com has an A-record but not an MX-record (as a 2014-09-14 has an MX-record)</comment>
+		<category>ISEMAIL_VALID_CATEGORY</category>
+		<diagnosis>ISEMAIL_VALID</diagnosis>
 		<source>Dominic Sayers</source>
 		<sourcelink>http://isemail.info</sourcelink>
 	</test>

@@ -19,7 +19,7 @@ Date       Tests        Version Notes
 2010-10-18 #1-#279      2.12	New schema designed to enhance fault
 				identification.
 2011-02-21 #193, #202	2.13	bar.com now has an MX record, seemingly.
-2011-07-14 All		3.04	Changed my link to http://isemail.info
+2011-07-14 All			3.04	Changed my link to http://isemail.info
 -->
 <tests version="3.04">
 	<description>
@@ -1499,8 +1499,8 @@ Date       Tests        Version Notes
 	</test>
 	<test id="193">
 		<address>a@bar.com</address>
-		<category>ISEMAIL_VALID_CATEGORY</category>
-		<diagnosis>ISEMAIL_VALID</diagnosis>
+		<category>ISEMAIL_DNSWARN</category>
+		<diagnosis>ISEMAIL_DNSWARN_NO_MX_RECORD</diagnosis>
 		<source>Paul Gregg</source>
 		<sourcelink>http://pgregg.com/projects/php/code/showvalidemail.php</sourcelink>
 	</test>
@@ -1564,8 +1564,8 @@ Date       Tests        Version Notes
 	</test>
 	<test id="202">
 		<address>a-b@bar.com</address>
-		<category>ISEMAIL_VALID_CATEGORY</category>
-		<diagnosis>ISEMAIL_VALID</diagnosis>
+		<category>ISEMAIL_DNSWARN</category>
+		<diagnosis>ISEMAIL_DNSWARN_NO_MX_RECORD</diagnosis>
 		<source>Paul Gregg</source>
 		<sourcelink>http://pgregg.com/projects/php/code/showvalidemail.php</sourcelink>
 	</test>

@@ -11,6 +11,10 @@ The address is checked against
 [RFC 5322](http://tools.ietf.org/html/rfc5322 "RFC 5322: Internet Message Format")
 thanks to [is_email()][] code by [Dominic Sayers][].
 
+| License | Version | Status | SensioLabsInsight |
+| ------- | ------- | ------ | ----------------- |
+| [![License](https://poser.pugx.org/ocubom/email-address/license.svg)][0] | [![Latest Stable Version](https://poser.pugx.org/ocubom/email-address/v/stable.svg)](https://packagist.org/packages/ocubom/email-address) [![Latest Unstable Version](https://poser.pugx.org/ocubom/email-address/v/unstable.svg)](https://packagist.org/packages/ocubom/email-address) | [![Build Status](https://travis-ci.org/ocubom/email-address.svg)](https://travis-ci.org/ocubom/email-address) [![Coverage Status](https://img.shields.io/coveralls/ocubom/email-address.svg)](https://coveralls.io/r/ocubom/email-address) | [![SensioLabsInsight](https://insight.sensiolabs.com/projects/ea470f18-10c1-4489-b2ad-a6aa62c4aa33/big.png)](https://insight.sensiolabs.com/projects/ea470f18-10c1-4489-b2ad-a6aa62c4aa33) |
+
 Installation
 ------------
 
