@@ -22,6 +22,7 @@
     },
 
     "autoload": {
+        "files": [ "src/is_email.php" ],
         "psr-4": { "Ocubom\\Email\\": "src/" }
     },
 
