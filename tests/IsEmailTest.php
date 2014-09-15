@@ -11,9 +11,6 @@
 
 namespace Ocubom\Email\Tests;
 
-use Ocubom\Email\Address as EmailAddress;
-use Ocubom\Email\RFC\Diagnose;
-
 /**
  * Test email address
  *
