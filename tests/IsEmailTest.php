@@ -53,102 +53,9 @@ class IsEmailTest extends \PHPUnit_Framework_TestCase
      */
     public function provideEmails()
     {
-        // Replace special characters (http://github.com/dominicsayers/isemail/blob/master/test/tests.php#L138)
-        $searchs = array(' ', mb_convert_encoding('&#9229;&#9226;', 'UTF-8', 'HTML-ENTITIES'));
-        $replace = array(' ', chr(13) . chr(10));
-        for ($i = 0; $i < 32; $i++) {
-            // PHP bug doesn't allow us to use hex notation (http://bugs.php.net/48645)
-            $entity    = mb_convert_encoding('&#' . (string) (9216 + $i) . ';', 'UTF-8', 'HTML-ENTITIES');
-            $searchs[] = $entity;
-            $replace[] = chr($i);
-        }
-
-        return array_values(array_reduce(
-            iterator_to_array(array_reduce(
-                array(
-                    __DIR__ . '/tests-original.xml',
-                    __DIR__ . '/tests.xml',
-                ),
-                function (\Traversable $iterator, $path) {
-                    $document = new \DOMDocument();
-                    $document->load($path);
-                    $document->schemaValidate(__DIR__ . '/tests.xsd');
-
-                    $xpath = new \DOMXPath($document);
-                    $nodes = $xpath->query('//test');
-
-                    if ($nodes) {
-                        $iterator->append(new \ArrayIterator(iterator_to_array($nodes)));
-                    }
-
-                    return $iterator;
-                },
-                new \AppendIterator()
-            )),
-            function ($tests, $node) use ($searchs, $replace) {
-                $test = array(
-                    'address'  => '',
-                    'analysis' => array(
-                        'category'  => '',
-                        'diagnosis' => '',
-                    ),
-                    'comment'  => '',
-                    'credit'   => array(),
-                    'id'       => $node->hasAttribute('id') ? $node->getAttribute('id') : '',
-                    // For reference
-                    'source' => array(
-                        'path' => new \SplFileInfo($node->baseURI),
-                        'line' => $node->getLineNo(),
-                    ),
-                );
-
-                foreach ($node->childNodes as $child) {
-                    switch ($child->localName) {
-                        case '':
-                            break;
-
-                        case 'address':
-                        case 'comment':
-                            $test[$child->localName] = str_replace($searchs, $replace, $child->nodeValue);
-                            break;
-
-                        case 'category':
-                            $test['analysis'][$child->localName] = constant($child->nodeValue);
-                            break;
-
-                        case 'diagnosis':
-                            $test['analysis'][$child->localName][] = constant($child->nodeValue);
-                            break;
-
-                        case 'source':
-                            $test['credit']['name'] = (string) $child->nodeValue;
-                            break;
-
-                        case 'sourcelink':
-                            $test['credit']['link'] = (string) $child->nodeValue;
-                            break;
-
-                        default:
-                            fprintf(STDERR, "Ignoring \"%s\" attribute\n", $child->localName);
-                            break;
-                    }
-                }
-
-                if (isset($tests[$test['address']])) {
-                    fprintf(
-                        STDERR,
-                        "Ignoring duplicate test for \"%s\" on %s:%s (id=%s) (previous: %s)\n",
-                        $test['address'],
-                        $test['source']['path'],
-                        $test['source']['line'],
-                        $test['id'],
-                        $tests[$test['address']]['source']
-                    );
-
-                    return $tests;
-                }
-
-                $tests[$test['address']] = array(
+        return array_map(
+            function ($test) {
+                return array(
                     'address' => $test['address'],
                     'output'  => array(
                         'status' => $test['analysis']['diagnosis'],
@@ -161,10 +68,8 @@ class IsEmailTest extends \PHPUnit_Framework_TestCase
                     )),
                     'comment' => $test['comment'],
                 );
-
-                return $tests;
             },
-            array()
-        ));
+            require(__DIR__ . '/../Resources/data/tests.php')
+        );
     }
 }

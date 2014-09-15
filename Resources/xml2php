@@ -1,0 +1,602 @@
+#!/usr/bin/env php
+<?php
+
+/*
+ * This file is part of "Email Address" library
+ *
+ * © Oscar Cubo Medina <ocubom@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// Launch builder
+call_user_func(function () {
+    return new Builder();
+})->run();
+
+/**
+ * Convert meta.xml and test.xml files into PHP code
+ *
+ * @author Oscar Cubo Medina <ocubom@gmail.com>
+ */
+class Builder
+{
+    /**
+     * Runs application
+     */
+    public function run()
+    {
+        $classes = array(
+            // Metadata
+            'Categories' => __DIR__ . '/xml/meta.xml',
+            'Diagnoses'  => __DIR__ . '/xml/meta.xml',
+            'References' => __DIR__ . '/xml/meta.xml',
+            'SMTP'       => __DIR__ . '/xml/meta.xml',
+            // Tests
+            'Tests' => array(
+                __DIR__ . '/xml/tests-original.xml',
+                __DIR__ . '/xml/tests.xml',
+            ),
+        );
+
+        foreach ($classes as $class => $source) {
+            try {
+                $path = sprintf('%s/data/%s.php', __DIR__, strtolower($class));
+                fprintf(STDOUT, "Generating %s dictionary on \"%s\"...\n", $class, $path);
+
+                $dirname = dirname($path);
+                if (!file_exists($dirname)) {
+                    fprintf(STDOUT, "Create %s dictionary parent directory \"%s\"...\n", $class, $dirname);
+                    mkdir($dirname, 0777, true);
+                }
+                unset($dirname);
+
+                $data = call_user_func(array($this, 'load' . $class), $source);
+                $file = new \SplFileObject($path, 'w+');
+                $file->fwrite(<<<EOF
+<?php
+
+/*
+ * This file is part of "Email Address" library
+ *
+ * © Oscar Cubo Medina <ocubom@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+return {$this->generatePhp($data, 1)};
+
+EOF
+                );
+
+                fprintf(STDOUT, "%s dictionary generated.\n", $class);
+            } catch (\Exception $err) {
+                fprintf(STDOUT, "%s dictionary failed.\n", $funtion);
+                throw $err;
+            }
+        }
+    }
+
+    /**
+     * Convert categories metadata XML into PHP file
+     *
+     * @param array $source XML source paths
+     *
+     * @return array
+     *
+     *
+     *
+     * @return array
+     */
+    protected function loadCategories($source)
+    {
+        return array_reduce(
+            iterator_to_array(array_reduce(
+                is_array($source) ? $source : (array) $source,
+                function (\Traversable $iterator, $path) {
+                    $document = new \DOMDocument();
+                    $document->load($path);
+                    $document->schemaValidate(dirname($path) . '/meta.xsd');
+
+                    $xpath = new \DOMXPath($document);
+                    $nodes = $xpath->query('/meta/Categories/item[@id]');
+
+                    if ($nodes) {
+                        $iterator->append(new \ArrayIterator(iterator_to_array($nodes)));
+                    }
+
+                    return $iterator;
+                },
+                new \AppendIterator()
+            )),
+            function ($items, $node) {
+                $item = array(
+                    'value'        => '',
+                    'description'  => '',
+                    // Extract id attribute
+                    'id' => $node->hasAttribute('id') ? $node->getAttribute('id') : '',
+                    // For reference
+                    'source' => array(
+                        'path' => new \SplFileInfo($node->baseURI),
+                        'line' => $node->getLineNo(),
+                    ),
+                );
+
+                foreach ($node->childNodes as $name => $child) {
+                    switch ($child->localName) {
+                        case '':
+                            break;
+
+                        case 'description':
+                            $item[$child->localName] = (string) $child->nodeValue;
+                            break;
+
+                        case 'value':
+                            $item[$child->localName] = 0 + $child->nodeValue;
+                            break;
+
+                        default:
+                            fprintf(STDERR, "Ignoring \"%s\" attribute\n", $child->localName);
+                            break;
+                    }
+                }
+
+                if (isset($items[$item['id']])) {
+                    fprintf(
+                        STDERR,
+                        "Ignoring duplicate test for \"%s\" on %s:%d id=%s (previous: %s:%d id=%s)\n",
+                        $item['id'],
+                        $item['source']['path'],
+                        $item['source']['line'],
+                        $item['id'],
+                        $items[$item['id']]['source']['path'],
+                        $items[$item['id']]['source']['line'],
+                        $items[$item['id']]['id']
+                    );
+
+                    return $items;
+                }
+
+                $items[$item['id']] = $item;
+
+                return $items;
+            },
+            array()
+        );
+    }
+
+    /**
+     * Convert diagnoses metadata XML into PHP file
+     *
+     * @param array $source XML source paths
+     *
+     * @return array
+     */
+    protected function loadDiagnoses($source)
+    {
+        return array_reduce(
+            iterator_to_array(array_reduce(
+                is_array($source) ? $source : (array) $source,
+                function (\Traversable $iterator, $path) {
+                    $document = new \DOMDocument();
+                    $document->load($path);
+                    $document->schemaValidate(dirname($path) . '/meta.xsd');
+
+                    $xpath = new \DOMXPath($document);
+                    $nodes = $xpath->query('/meta/Diagnoses/item[@id]');
+
+                    if ($nodes) {
+                        $iterator->append(new \ArrayIterator(iterator_to_array($nodes)));
+                    }
+
+                    return $iterator;
+                },
+                new \AppendIterator()
+            )),
+            function ($items, $node) {
+                $item = array(
+                    'value'       => '',
+                    'category'    => '',
+                    'description' => '',
+                    'smtp'        => '',
+                    'references'  => array(),
+                    // Extract id attribute
+                    'id' => $node->hasAttribute('id') ? $node->getAttribute('id') : '',
+                    // For reference
+                    'source' => array(
+                        'path' => new \SplFileInfo($node->baseURI),
+                        'line' => $node->getLineNo(),
+                    ),
+                );
+
+                foreach ($node->childNodes as $name => $child) {
+                    switch ($child->localName) {
+                        case '':
+                            break;
+
+                        case 'category':
+                        case 'description':
+                        case 'smtp':
+                            $item[$child->localName] = (string) $child->nodeValue;
+                            break;
+
+                        case 'value':
+                            $item[$child->localName] = 0 + $child->nodeValue;
+                            break;
+
+                        case 'reference':
+                            $item['references'][] = (string) $child->nodeValue;
+                            break;
+
+                        default:
+                            fprintf(STDERR, "Ignoring %s element\n", $child->localName);
+                            break;
+                    }
+                }
+
+                if (isset($items[$item['id']])) {
+                    fprintf(
+                        STDERR,
+                        "Ignoring duplicate test for \"%s\" on %s:%d id=%s (previous: %s:%d id=%s)\n",
+                        $item['id'],
+                        $item['source']['path'],
+                        $item['source']['line'],
+                        $item['id'],
+                        $items[$item['id']]['source']['path'],
+                        $items[$item['id']]['source']['line'],
+                        $items[$item['id']]['id']
+                    );
+
+                    return $items;
+                }
+
+                $items[$item['id']] = $item;
+
+                return $items;
+            },
+            array()
+        );
+    }
+
+    /**
+     * Convert reference metadata XML into PHP file
+     *
+     * @param array $source XML source paths
+     *
+     * @return array
+     */
+    protected function loadReferences($source)
+    {
+        return array_reduce(
+            iterator_to_array(array_reduce(
+                is_array($source) ? $source : (array) $source,
+                function (\Traversable $iterator, $path) {
+                    $document = new \DOMDocument();
+                    $document->load($path);
+                    $document->schemaValidate(dirname($path) . '/meta.xsd');
+
+                    $xpath = new \DOMXPath($document);
+                    $nodes = $xpath->query('/meta/References/item[@id]');
+
+                    if ($nodes) {
+                        $iterator->append(new \ArrayIterator(iterator_to_array($nodes)));
+                    }
+
+                    return $iterator;
+                },
+                new \AppendIterator()
+            )),
+            function ($items, $node) {
+                $item = array(
+                    'cite'  => '',
+                    'quote' => '',
+                    'link'  => '',
+                    // Extract id attribute
+                    'id' => $node->hasAttribute('id') ? $node->getAttribute('id') : '',
+                    // For reference
+                    'source' => array(
+                        'path' => new \SplFileInfo($node->baseURI),
+                        'line' => $node->getLineNo(),
+                    ),
+                );
+
+                foreach ($node->childNodes as $name => $child) {
+                    switch ($child->localName) {
+                        case '':
+                            break;
+
+                        case 'cite':
+                            $item[$child->localName] = (string) $child->nodeValue;
+                            break;
+
+                        case 'blockquote':
+                            $item['quote'] = (string) $child->nodeValue;
+                            $item['link']  = (string) $child->getAttribute('cite');
+                            break;
+
+                        default:
+                            fprintf(STDERR, "Ignoring %s element\n", $child->localName);
+                            break;
+                    }
+                }
+
+                if (isset($items[$item['id']])) {
+                    fprintf(
+                        STDERR,
+                        "Ignoring duplicate test for \"%s\" on %s:%d id=%s (previous: %s:%d id=%s)\n",
+                        $item['id'],
+                        $item['source']['path'],
+                        $item['source']['line'],
+                        $item['id'],
+                        $items[$item['id']]['source']['path'],
+                        $items[$item['id']]['source']['line'],
+                        $items[$item['id']]['id']
+                    );
+
+                    return $items;
+                }
+
+                $items[$item['id']] = $item;
+
+                return $items;
+            },
+            array()
+        );
+    }
+
+    /**
+     * Convert SMTP metadata XML into PHP file
+     *
+     * @param array $source XML source paths
+     *
+     * @return array
+     */
+    protected function loadSMTP($source)
+    {
+        return array_reduce(
+            iterator_to_array(array_reduce(
+                is_array($source) ? $source : (array) $source,
+                function (\Traversable $iterator, $path) {
+                    $document = new \DOMDocument();
+                    $document->load($path);
+                    $document->schemaValidate(dirname($path) . '/meta.xsd');
+
+                    $xpath = new \DOMXPath($document);
+                    $nodes = $xpath->query('/meta/SMTP/item[@id]');
+
+                    if ($nodes) {
+                        $iterator->append(new \ArrayIterator(iterator_to_array($nodes)));
+                    }
+
+                    return $iterator;
+                },
+                new \AppendIterator()
+            )),
+            function ($items, $node) {
+                $item = array(
+                    'text'  => '',
+                    'value' => '',
+                    // Extract id attribute
+                    'id' => $node->hasAttribute('id') ? $node->getAttribute('id') : '',
+                    // For reference
+                    'source' => array(
+                        'path' => new \SplFileInfo($node->baseURI),
+                        'line' => $node->getLineNo(),
+                    ),
+                );
+
+                foreach ($node->childNodes as $name => $child) {
+                    switch ($child->localName) {
+                        case '':
+                            break;
+
+                        case 'text':
+                        case 'value':
+                            $item[$child->localName] = (string) $child->nodeValue;
+                            break;
+
+                        default:
+                            fprintf(STDERR, "Ignoring \"%s\" attribute\n", $child->localName);
+                            break;
+                    }
+                }
+
+                if (isset($items[$item['id']])) {
+                    fprintf(
+                        STDERR,
+                        "Ignoring duplicate test for \"%s\" on %s:%d id=%s (previous: %s:%d id=%s)\n",
+                        $item['id'],
+                        $item['source']['path'],
+                        $item['source']['line'],
+                        $item['id'],
+                        $items[$item['id']]['source']['path'],
+                        $items[$item['id']]['source']['line'],
+                        $items[$item['id']]['id']
+                    );
+
+                    return $items;
+                }
+
+                $items[$item['id']] = $item;
+
+                return $items;
+            },
+            array()
+        );
+    }
+
+    /**
+     * Convert test XML into PHP file
+     *
+     * @param array $source XML source paths
+     *
+     * @return array
+     */
+    protected function loadTests($source)
+    {
+        // Replace special characters (http://github.com/dominicsayers/isemail/blob/master/test/tests.php#L138)
+        $searchs = array(' ', mb_convert_encoding('&#9229;&#9226;', 'UTF-8', 'HTML-ENTITIES'));
+        $replace = array(' ', chr(13) . chr(10));
+        for ($i = 0; $i < 32; $i++) {
+            // PHP bug doesn't allow us to use hex notation (http://bugs.php.net/48645)
+            $entity    = mb_convert_encoding('&#' . (string) (9216 + $i) . ';', 'UTF-8', 'HTML-ENTITIES');
+            $searchs[] = $entity;
+            $replace[] = chr($i);
+        }
+
+        return array_reduce(
+            iterator_to_array(array_reduce(
+                is_array($source) ? $source : (array) $source,
+                function (\Traversable $iterator, $path) {
+                    $document = new \DOMDocument();
+                    $document->load($path);
+                    $document->schemaValidate(dirname($path) . '/tests.xsd');
+
+                    $xpath = new \DOMXPath($document);
+                    $nodes = $xpath->query('//test');
+
+                    if ($nodes) {
+                        $iterator->append(new \ArrayIterator(iterator_to_array($nodes)));
+                    }
+
+                    return $iterator;
+                },
+                new \AppendIterator()
+            )),
+            function ($tests, $node) use ($searchs, $replace) {
+                $test = array(
+                    'address'  => '',
+                    'analysis' => array(
+                        'category'  => '',
+                        'diagnosis' => '',
+                    ),
+                    'comment'  => '',
+                    'credit'   => array(),
+                    // Extract id attribute
+                    'id' => $node->hasAttribute('id') ? $node->getAttribute('id') : '',
+                    // For reference
+                    'source' => array(
+                        'path' => new \SplFileInfo($node->baseURI),
+                        'line' => $node->getLineNo(),
+                    ),
+                );
+
+                foreach ($node->childNodes as $name => $child) {
+                    switch ($child->localName) {
+                        case '':
+                            break;
+
+                        case 'address':
+                        case 'comment':
+                            $test[$child->localName] = str_replace($searchs, $replace, $child->nodeValue);
+                            break;
+
+                        case 'category':
+                            $test['analysis'][$child->localName] = (string) $child->nodeValue;
+                            break;
+
+                        case 'diagnosis':
+                            $test['analysis'][$child->localName][] = (string) $child->nodeValue;
+                            break;
+
+                        case 'source':
+                            $test['credit']['name'] = (string) $child->nodeValue;
+                            break;
+
+                        case 'sourcelink':
+                            $test['credit']['link'] = (string) $child->nodeValue;
+                            break;
+
+                        default:
+                            fprintf(STDERR, "Ignoring \"%s\" attribute\n", $child->localName);
+                            break;
+                    }
+                }
+
+                if (isset($tests[$test['address']])) {
+                    fprintf(
+                        STDERR,
+                        "Ignoring duplicate test for \"%s\" on %s:%d id=%s (previous: %s:%d id=%s)\n",
+                        $test['address'],
+                        $test['source']['path'],
+                        $test['source']['line'],
+                        $test['id'],
+                        $tests[$test['address']]['source']['path'],
+                        $tests[$test['address']]['source']['line'],
+                        $tests[$test['address']]['id']
+                    );
+
+                    return $tests;
+                }
+
+                $tests[$test['address']] = $test;
+
+                return $tests;
+            },
+            array()
+        );
+    }
+
+    /**
+     * Generate PHP code for the value
+     *
+     * @param mixed   $value Value to dump
+     * @param integer $level Level of identation
+     * @param boolean $const Do convert constants into its values
+     *
+     * @return string
+     */
+    protected function generatePhp($value, $level = 0, $const = true)
+    {
+        if (is_null($value)) {
+            return 'null';
+        } elseif ($value instanceof \SplFileInfo) {
+            static $root = null;
+            static $len  = null;
+            if (null === $root) {
+                $root = __DIR__;
+                $len  = strlen($root);
+            }
+
+            return strncmp($root, $value, $len)
+                // Out of working dir => use absolute path
+                ? sprintf("new \\SplFileInfo('%s')", $value)
+                // Use relative path under root dir
+                : sprintf("new \\SplFileInfo(dirname(__DIR__) . '%s')", substr($value, strlen(__DIR__)));
+            ;
+        } else if (is_int($value)) {
+            return (string) $value;
+        } elseif (is_array($value)) {
+            if (empty($value)) {
+                return 'array()';
+            }
+
+            $array = array();
+            foreach ($value as $key => $val) {
+                $array[] = sprintf(
+                    "%s%s => %s,",
+                    str_repeat(' ', 4 * $level),
+                    self::generatePhp($key),
+                    self::generatePhp($val, $level + 1, 'id' !== $key)
+                );
+            }
+
+            return sprintf(
+                "array(\n%s\n%s)",
+                implode("\n", $array),
+                str_repeat(' ', 4 * ($level - 1))
+            );
+        } elseif (is_string($value)) {
+            return $const && defined($value)
+                ? $value // Constant value
+                : sprintf("'%s'", addcslashes($value, '\\\''))  // String (escaped '\' and "'")
+            ;
+        } else {
+            trigger_error("Unsupported type of \$value, in index $key.");
+        }
+    }
+}
