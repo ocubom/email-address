@@ -1,7 +1,7 @@
 {
     "name" : "ocubom/email-address",
     "description" : "Email address value object checked against RFC 3696, RFC 1123, RFC 4291, RFC 5321 and RFC 5322.",
-    "keywords" : [ "address", "email", "validator", "RFC 1123", "RFC 3696", "RFC 4291", "RFC 5321", "RFC 5322" ],
+    "keywords" : [ "address", "email", "validator", "RFC 1123", "RFC 3696", "RFC 4291", "RFC 5321", "RFC 5322", "RFC1123", "RFC3696", "RFC4291", "RFC5321", "RFC5322" ],
     "homepage" : "http://github.com/ocubom/email-address",
     "license" : "MIT",
     "authors" : [{

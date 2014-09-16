@@ -11,6 +11,8 @@
 
 namespace Ocubom\Email;
 
+use Ocubom\Email\Exception\InvalidEmailAddressException;
+
 /**
  * Email address value
  *
@@ -37,9 +39,9 @@ class Address
      */
     public function __construct($address, $checkdns = true)
     {
-        $code = is_email($address, $checkdns, true, $parsed);
-        if (ISEMAIL_THRESHOLD < $code) {
-            throw new \RuntimeException(sprintf('Invalid email address "%s"', $address), $code);
+        $diagnosis = new Diagnosis(is_email($address, $checkdns, true, $parsed));
+        if (ISEMAIL_THRESHOLD < $diagnosis->severity) {
+            throw new InvalidEmailAddressException($address, $diagnosis);
         }
 
         $this->data = array(
@@ -53,7 +55,12 @@ class Address
 
             // Diagnoses
             // http://github.com/dominicsayers/isemail/blob/master/is_email.php#L61
-            'status' => $parsed['status'],
+            'status' => array_map(
+                function ($status) {
+                    return new Diagnosis($status);
+                },
+                $parsed['status']
+            ),
         );
     }
 

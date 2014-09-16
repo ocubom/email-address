@@ -12,6 +12,7 @@
 namespace Ocubom\Email\Tests;
 
 use Ocubom\Email\Address as EmailAddress;
+use Ocubom\Email\Diagnosis;
 
 /**
  * Email Address Tests
@@ -35,7 +36,7 @@ class AddressTest extends \PHPUnit_Framework_TestCase
         // Must return parsed values
         $this->assertEquals('JohnDoe', $obj->local);
         $this->assertEquals('example.com', $obj->domain);
-        $this->assertEquals(array(ISEMAIL_DNSWARN_NO_MX_RECORD), $obj->status);
+        $this->assertEquals(array(new Diagnosis(ISEMAIL_DNSWARN_NO_MX_RECORD)), $obj->status);
 
         // Must convert into string
         $this->assertEquals('JohnDoe@example.com', (string) $obj, 'Email address must convert to string');
@@ -56,7 +57,7 @@ class AddressTest extends \PHPUnit_Framework_TestCase
         // Must return parsed values
         $this->assertEquals('JohnDoe', $obj->local);
         $this->assertEquals('example.com', $obj->domain);
-        $this->assertEquals(array(ISEMAIL_VALID), $obj->status);
+        $this->assertEquals(array(new Diagnosis(ISEMAIL_VALID)), $obj->status);
 
         // Must convert into string
         $this->assertEquals('JohnDoe@example.com', (string) $obj, 'Email address must convert to string');
@@ -65,7 +66,7 @@ class AddressTest extends \PHPUnit_Framework_TestCase
     /**
      * Invalid address must generate exceptions
      *
-     * @expectedException        \RuntimeException
+     * @expectedException        \Ocubom\Email\Exception\InvalidEmailAddressException
      * @expectedExceptionMessage Invalid email address ""
      * @expectedExceptionCode    131
      */
