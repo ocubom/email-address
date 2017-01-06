@@ -14,7 +14,8 @@
     },
 
     "require": {
-        "php": ">=5.3.3"
+        "php": ">=5.3.3",
+        "dominicsayers/isemail": "^3.0"
     },
 
     "require-dev": {
@@ -22,7 +23,6 @@
     },
 
     "autoload": {
-        "files": [ "src/is_email.php" ],
         "psr-4": { "Ocubom\\Email\\": "src/" }
     },
 
@@ -31,7 +31,7 @@
     },
 
     "extra": {
-        "branch-alias": { "dev-master": "1.0.x-dev" }
+        "branch-alias": { "dev-master": "2.0.x-dev" }
     },
 
     "archive": {

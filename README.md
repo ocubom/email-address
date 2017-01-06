@@ -21,7 +21,7 @@ Installation
 Just use [composer][] to add the dependency:
 
 ```
-composer require ocubom/email-address:dev-master
+composer require ocubom/email-address
 ```
 
 Or add the dependecy manually:
@@ -31,7 +31,7 @@ Or add the dependecy manually:
     ```
     {
         "require": {
-            "ocubom/email-address": "dev-master"
+            "ocubom/email-address": "^1.0.0"
         }
     }
     ```
